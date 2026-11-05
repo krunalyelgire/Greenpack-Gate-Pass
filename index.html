@@ -5,18 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Greenpack Gate Pass</title>
-select, textarea {
-  width: 100%;
-  padding: 13px;
-  border: 1px solid #ccd8cf;
-  border-radius: 8px;
-  font-size: 15px;
-  background: white;
-}
 
-textarea {
-  resize: vertical;
-}
   <style>
     * {
       box-sizing: border-box;
@@ -79,17 +68,26 @@ textarea {
       margin: 17px 0 8px;
     }
 
-    input {
+    input,
+    select,
+    textarea {
       width: 100%;
       padding: 13px;
       border: 1px solid #ccd8cf;
       border-radius: 8px;
       font-size: 15px;
+      background: white;
       outline: none;
     }
 
-    input:focus {
+    input:focus,
+    select:focus,
+    textarea:focus {
       border-color: #1b6b3a;
+    }
+
+    textarea {
+      resize: vertical;
     }
 
     button {
@@ -102,6 +100,10 @@ textarea {
       border-radius: 8px;
       font-size: 16px;
       font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:disabled {
       cursor: not-allowed;
       opacity: 0.65;
     }
@@ -114,6 +116,12 @@ textarea {
       font-size: 12px;
       line-height: 1.6;
       text-align: center;
+    }
+
+    #applicationMessage {
+      text-align: center;
+      font-size: 14px;
+      margin-top: 15px;
     }
 
     footer {
@@ -133,7 +141,10 @@ textarea {
   </header>
 
   <main>
-    <section class="login-box">
+
+    <!-- EMPLOYEE LOGIN -->
+
+    <section id="loginBox" class="login-box">
 
       <h2>Employee Login</h2>
 
@@ -143,175 +154,289 @@ textarea {
 
       <form id="loginForm" onsubmit="login(event)">
 
-  <label for="empId">HRMS Employee ID</label>
-  <input
-    type="text"
-    id="empId"
-    placeholder="Enter Employee ID"
-    autocomplete="username"
-    required
-  >
+        <label for="empId">HRMS Employee ID</label>
 
-  <label for="password">HRMS Password</label>
-  <input
-    type="password"
-    id="password"
-    placeholder="Enter HRMS Password"
-    autocomplete="current-password"
-    required
-  >
+        <input
+          type="text"
+          id="empId"
+          placeholder="Enter Employee ID"
+          autocomplete="username"
+          required
+        >
 
-  <button type="submit">
-    LOGIN
-  </button>
+        <label for="password">HRMS Password</label>
 
-</form>
+        <input
+          type="password"
+          id="password"
+          placeholder="Enter HRMS Password"
+          autocomplete="current-password"
+          required
+        >
 
-<p id="loginMessage" style="text-align:center;font-size:14px;"></p>
+        <button type="submit">
+          LOGIN
+        </button>
+
+      </form>
+
+      <p id="loginMessage" style="text-align:center;font-size:14px;"></p>
 
       <div class="info">
-        Use your existing HRMS login credentials.<br>
-        HRMS authentication connection will be added next.
+        Use your existing HRMS login credentials.
       </div>
 
     </section>
-  
-<section id="applicationBox" class="login-box" style="display:none;">
 
-  <h2>Apply for Gate Pass</h2>
-  <p class="subtitle">Employee Details</p>
 
-  <div class="info" style="text-align:left;">
-    <p><b>Employee ID:</b> <span id="showEmpId"></span></p>
-    <p><b>Employee Name:</b> <span id="showEmpName"></span></p>
-    <p><b>Department:</b> <span id="showDepartment"></span></p>
-    <p><b>Sub Department:</b> <span id="showSubDepartment">To be connected</span></p>
-    <p><b>Designation:</b> <span id="showDesignation"></span></p>
-  </div>
+    <!-- EMPLOYEE GATE PASS APPLICATION -->
 
-  <form id="gatePassForm">
+    <section id="applicationBox" class="login-box" style="display:none;">
 
-    <label for="goingTo">Going To</label>
-    <select id="goingTo" required>
-      <option value="">Select destination</option>
-      <option>Home</option>
-      <option>Hospital</option>
-      <option>Limbejalgaon</option>
-      <option>Official Work</option>
-    </select>
+      <h2>Apply for Gate Pass</h2>
 
-    <label for="destination">Destination Details</label>
-    <input
-      type="text"
-      id="destination"
-      placeholder="Enter destination details"
-      required
-    >
+      <p class="subtitle">
+        Employee Details
+      </p>
 
-    <label for="purpose">For</label>
-    <select id="purpose" required>
-      <option value="">Select purpose</option>
-      <option>Personal Work</option>
-      <option>Lunch</option>
-      <option>Dinner</option>
-      <option>Other</option>
-    </select>
+      <div class="info" style="text-align:left;">
 
-    <div id="otherCommentBox" style="display:none;">
-      <label for="otherComment">Other Purpose - Comment</label>
-      <textarea
-        id="otherComment"
-        placeholder="Enter reason"
-        rows="3"
-      ></textarea>
-    </div>
+        <p>
+          <b>Employee ID:</b>
+          <span id="showEmpId"></span>
+        </p>
 
-    <button type="submit">SUBMIT GATE PASS</button>
+        <p>
+          <b>Employee Name:</b>
+          <span id="showEmpName"></span>
+        </p>
 
-  </form>
+        <p>
+          <b>Department:</b>
+          <span id="showDepartment"></span>
+        </p>
 
-  <p id="applicationMessage"></p>
+        <p>
+          <b>Sub Department:</b>
+          <span id="showSubDepartment">To be connected</span>
+        </p>
 
-</section>
+        <p>
+          <b>Designation:</b>
+          <span id="showDesignation"></span>
+        </p>
+
+      </div>
+
+      <form id="gatePassForm">
+
+        <label for="goingTo">Going To</label>
+
+        <select id="goingTo" required>
+          <option value="">Select destination</option>
+          <option value="Home">Home</option>
+          <option value="Hospital">Hospital</option>
+          <option value="Limbejalgaon">Limbejalgaon</option>
+          <option value="Official Work">Official Work</option>
+        </select>
+
+
+        <label for="destination">Destination Details</label>
+
+        <input
+          type="text"
+          id="destination"
+          placeholder="Enter destination details"
+          required
+        >
+
+
+        <label for="purpose">For</label>
+
+        <select id="purpose" required>
+          <option value="">Select purpose</option>
+          <option value="Personal Work">Personal Work</option>
+          <option value="Lunch">Lunch</option>
+          <option value="Dinner">Dinner</option>
+          <option value="Other">Other</option>
+        </select>
+
+
+        <div id="otherCommentBox" style="display:none;">
+
+          <label for="otherComment">
+            Other Purpose - Comment
+          </label>
+
+          <textarea
+            id="otherComment"
+            placeholder="Enter reason"
+            rows="3"
+          ></textarea>
+
+        </div>
+
+
+        <button type="submit">
+          SUBMIT GATE PASS
+        </button>
+
+      </form>
+
+      <p id="applicationMessage"></p>
+
+    </section>
 
   </main>
+
 
   <footer>
     GREENPACK INDUSTRIES | Gate Pass System
   </footer>
-<script>
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxEmbL8co7DTKuRn2il1iQ5-0j9m3JEOq_5zhJx0x4iuQYozeOkHrbdXknvS01VqsM36A/exec";
 
-function login(event) {
-  event.preventDefault();
 
-  const username = document.getElementById("empId").value.trim();
-  const password = document.getElementById("password").value.trim();
-  const message = document.getElementById("loginMessage");
-  const button = document.querySelector("#loginForm button");
+  <script>
 
-  message.textContent = "Verifying HRMS login...";
-  button.disabled = true;
+    // EXISTING HRMS LOGIN CONNECTION
 
-  fetch(
-    WEB_APP_URL +
-    "?username=" + encodeURIComponent(username) +
-    "&password=" + encodeURIComponent(password)
-  )
-  .then(response => response.json())
-  .then(data => {
-    console.log("HRMS LOGIN RESPONSE:", data);
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxEmbL8co7DTKuRn2il1iQ5-0j9m3JEOq_5zhJx0x4iuQYozeOkHrbdXknvS01VqsM36A/exec";
 
-    if (data.status === "success") {
 
-      localStorage.setItem("orgId", data.orgId);
-      localStorage.setItem("empId", data.empId);
-      localStorage.setItem("empName", data.empName);
-      localStorage.setItem("department", data.department);
-      localStorage.setItem("designation", data.designation);
-      localStorage.setItem("role", data.role);
-      localStorage.setItem("hrmsLoggedIn", "true");
+    // EMPLOYEE LOGIN FUNCTION
 
-      document.querySelector(".login-box").style.display = "none";
+    function login(event) {
 
-document.getElementById("applicationBox").style.display = "block";
+      event.preventDefault();
 
-document.getElementById("showEmpId").textContent = data.empId;
-document.getElementById("showEmpName").textContent = data.empName;
-document.getElementById("showDepartment").textContent = data.department;
-document.getElementById("showDesignation").textContent = data.designation;
-    } else {
-      message.textContent = "Invalid Employee ID or Password.";
-      message.style.color = "red";
+      const username =
+        document.getElementById("empId").value.trim();
+
+      const password =
+        document.getElementById("password").value.trim();
+
+      const message =
+        document.getElementById("loginMessage");
+
+      const button =
+        document.querySelector("#loginForm button");
+
+      message.textContent = "Verifying HRMS login...";
+
+      message.style.color = "#183b29";
+
+      button.disabled = true;
+
+
+      fetch(
+        WEB_APP_URL +
+        "?username=" + encodeURIComponent(username) +
+        "&password=" + encodeURIComponent(password)
+      )
+
+      .then(response => response.json())
+
+      .then(data => {
+
+        console.log("HRMS LOGIN RESPONSE:", data);
+
+        if (data.status === "success") {
+
+          localStorage.setItem("orgId", data.orgId);
+          localStorage.setItem("empId", data.empId);
+          localStorage.setItem("empName", data.empName);
+          localStorage.setItem("department", data.department);
+          localStorage.setItem("designation", data.designation);
+          localStorage.setItem("role", data.role);
+          localStorage.setItem("hrmsLoggedIn", "true");
+
+
+          // DISPLAY EMPLOYEE DETAILS
+
+          document.getElementById("showEmpId").textContent =
+            data.empId || "";
+
+          document.getElementById("showEmpName").textContent =
+            data.empName || "";
+
+          document.getElementById("showDepartment").textContent =
+            data.department || "";
+
+          document.getElementById("showDesignation").textContent =
+            data.designation || "";
+
+
+          // SWITCH TO APPLICATION SCREEN
+
+          document.getElementById("loginBox").style.display =
+            "none";
+
+          document.getElementById("applicationBox").style.display =
+            "block";
+
+        } else {
+
+          message.textContent =
+            "Invalid Employee ID or Password.";
+
+          message.style.color = "red";
+
+        }
+
+      })
+
+      .catch(error => {
+
+        console.error(error);
+
+        message.textContent =
+          "Connection error. Please try again.";
+
+        message.style.color = "red";
+
+      })
+
+      .finally(() => {
+
+        button.disabled = false;
+
+      });
+
     }
-  })
-  .catch(error => {
-    console.error(error);
 
-    message.textContent =
-      "Connection error. Please try again.";
 
-    message.style.color = "red";
-  })
-  .finally(() => {
-    button.disabled = false;
-  });
-}
-document.getElementById("purpose").addEventListener("change", function() {
-  const isOther = this.value === "Other";
+    // OTHER PURPOSE COMMENT VALIDATION
 
-  document.getElementById("otherCommentBox").style.display =
-    isOther ? "block" : "none";
+    document.getElementById("purpose").addEventListener(
+      "change",
+      function() {
 
-  document.getElementById("otherComment").required = isOther;
-});
+        const isOther = this.value === "Other";
 
-document.getElementById("gatePassForm").addEventListener("submit", function(event) {
-  event.preventDefault();
+        document.getElementById("otherCommentBox").style.display =
+          isOther ? "block" : "none";
 
-  document.getElementById("applicationMessage").textContent =
-    "Application form is ready. Submission connection will be added next.";
-});
-</script>
+        document.getElementById("otherComment").required =
+          isOther;
+
+      }
+    );
+
+
+    // GATE PASS APPLICATION FORM
+
+    document.getElementById("gatePassForm").addEventListener(
+      "submit",
+      function(event) {
+
+        event.preventDefault();
+
+        document.getElementById("applicationMessage").textContent =
+          "Application form is ready. Submission connection will be added next.";
+
+      }
+    );
+
+  </script>
+
 </body>
 </html>
