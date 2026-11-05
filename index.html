@@ -261,11 +261,14 @@ function login(event) {
       localStorage.setItem("role", data.role);
       localStorage.setItem("hrmsLoggedIn", "true");
 
-      message.textContent =
-        "Login successful. Welcome " + data.empName;
+      document.querySelector(".login-box").style.display = "none";
 
-      message.style.color = "green";
+document.getElementById("applicationBox").style.display = "block";
 
+document.getElementById("showEmpId").textContent = data.empId;
+document.getElementById("showEmpName").textContent = data.empName;
+document.getElementById("showDepartment").textContent = data.department;
+document.getElementById("showDesignation").textContent = data.designation;
     } else {
       message.textContent = "Invalid Employee ID or Password.";
       message.style.color = "red";
