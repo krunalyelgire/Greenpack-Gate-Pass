@@ -1,1 +1,427 @@
 
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Greenpack - HOD Approval</title>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f3f6f4;
+  color: #26352b;
+}
+
+header {
+  background: linear-gradient(120deg, #0f4d2d, #1b6b3a);
+  color: white;
+  padding: 22px;
+  text-align: center;
+}
+
+header h2 {
+  margin: 0 0 6px;
+}
+
+header p {
+  margin: 0;
+  font-size: 13px;
+}
+
+.container {
+  width: 94%;
+  max-width: 950px;
+  margin: 25px auto;
+}
+
+.panel {
+  background: white;
+  padding: 22px;
+  border-radius: 12px;
+  box-shadow: 0 3px 15px #00000010;
+  margin-bottom: 18px;
+}
+
+input {
+  width: 100%;
+  padding: 13px;
+  margin: 8px 0 14px;
+  border: 1px solid #ccd7cf;
+  border-radius: 7px;
+  font-size: 15px;
+}
+
+button {
+  border: none;
+  padding: 11px 17px;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.login-btn, .refresh-btn {
+  background: #17683a;
+  color: white;
+}
+
+.approve-btn {
+  background: #187a43;
+  color: white;
+}
+
+.reject-btn {
+  background: #c93636;
+  color: white;
+}
+
+.logout-btn {
+  background: #e9eeee;
+  color: #26352b;
+}
+
+.top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.pass-card {
+  border-left: 5px solid #1b7041;
+}
+
+.pass-card h3 {
+  margin-top: 0;
+  color: #17683a;
+}
+
+.details {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin: 18px 0;
+}
+
+.detail {
+  background: #f5f8f5;
+  padding: 11px;
+  border-radius: 7px;
+  overflow-wrap: anywhere;
+}
+
+.detail small {
+  display: block;
+  color: #647269;
+  margin-bottom: 5px;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+#message {
+  margin-top: 12px;
+  font-size: 14px;
+  white-space: pre-wrap;
+}
+
+.hidden {
+  display: none;
+}
+
+@media(max-width:600px) {
+  .details {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h2>GREENPACK HRMS</h2>
+  <p>EMPLOYEE GATE PASS - HOD APPROVAL PORTAL</p>
+</header>
+
+<div class="container">
+
+  <div class="panel" id="loginPanel">
+    <h3>HOD Login</h3>
+
+    <label>Employee ID</label>
+    <input id="username" type="text"
+      placeholder="Enter Employee ID">
+
+    <label>Password</label>
+    <input id="password" type="password"
+      placeholder="Enter HRMS Password">
+
+    <button class="login-btn" onclick="login()">
+      Login
+    </button>
+
+    <div id="loginMessage"></div>
+  </div>
+
+  <div id="dashboard" class="hidden">
+
+    <div class="panel">
+      <div class="top-row">
+        <div>
+          <h3 id="welcome" style="margin:0 0 5px"></h3>
+          <small>HOD Approval Dashboard</small>
+        </div>
+
+        <div>
+          <button class="refresh-btn" onclick="loadPending()">
+            Refresh
+          </button>
+          <button class="logout-btn" onclick="logout()">
+            Logout
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <h3>Pending Gate Pass Applications</h3>
+
+    <div id="passList"></div>
+
+  </div>
+
+</div>
+
+<script>
+const API_URL =
+"https://script.google.com/macros/s/AKfycbxJEemVS2S5ZqZXPKVcHEpXZmYxA5RTCHO7gme-0gH_n1xBZCGbSrxdUgDCLu9fjw9Ruw/exec";
+
+let loginToken = "";
+let hodEmployee = null;
+
+async function apiRequest(data) {
+  const response = await fetch(API_URL, {
+    method: "POST",
+    body: new URLSearchParams(data)
+  });
+
+  const result = await response.json();
+
+  if (result.success === false) {
+    throw new Error(result.message || "Request failed.");
+  }
+
+  return result;
+}
+
+async function login() {
+  const username =
+    document.getElementById("username").value.trim();
+
+  const password =
+    document.getElementById("password").value;
+
+  const message =
+    document.getElementById("loginMessage");
+
+  if (!username || !password) {
+    message.textContent = "Enter Employee ID and Password.";
+    return;
+  }
+
+  message.textContent = "Verifying login...";
+
+  try {
+    const result = await apiRequest({
+      action: "verifyLogin",
+      username: username,
+      password: password
+    });
+
+    loginToken = result.token;
+    hodEmployee = result.employee;
+
+    const roles = String(hodEmployee.gatePassRole || "")
+      .split(/[,;]+/)
+      .map(r => r.trim().toLowerCase());
+
+    if (!roles.includes("hod")) {
+      loginToken = "";
+      hodEmployee = null;
+      throw new Error("This account does not have HOD approval access.");
+    }
+
+    document.getElementById("loginPanel").classList.add("hidden");
+    document.getElementById("dashboard").classList.remove("hidden");
+
+    document.getElementById("welcome").textContent =
+      "Welcome, " + hodEmployee.empName;
+
+    await loadPending();
+
+  } catch (error) {
+    message.textContent = error.message;
+  }
+}
+
+async function loadPending() {
+  const list = document.getElementById("passList");
+
+  list.innerHTML = "<div class='panel'>Loading applications...</div>";
+
+  try {
+    const result = await apiRequest({
+      action: "getHODPendingPasses",
+      token: loginToken
+    });
+
+    list.innerHTML = "";
+
+    if (!result.passes || result.passes.length === 0) {
+      list.innerHTML =
+        "<div class='panel'>No pending Gate Pass applications.</div>";
+      return;
+    }
+
+    result.passes.forEach(pass => {
+      const card = document.createElement("div");
+      card.className = "panel pass-card";
+
+      card.innerHTML = `
+        <h3>Gate Pass: ${escapeHTML(pass.gatePassId)}</h3>
+
+        <div class="details">
+          ${makeDetail("Employee ID", pass.empId)}
+          ${makeDetail("Employee Name", pass.empName)}
+          ${makeDetail("Department", pass.department)}
+          ${makeDetail("Sub Department", pass.subDepartment)}
+          ${makeDetail("Designation", pass.designation)}
+          ${makeDetail("Going To", pass.goingTo)}
+          ${makeDetail("Destination Details", pass.destination)}
+          ${makeDetail("Purpose", pass.purpose)}
+          ${makeDetail("Application Date", pass.applicationDate)}
+          ${makeDetail("Application Time", pass.applicationTime)}
+        </div>
+
+        <div class="actions">
+          <button class="approve-btn"
+            onclick="approvePass('${escapeJS(pass.gatePassId)}')">
+            Approve
+          </button>
+
+          <button class="reject-btn"
+            onclick="rejectPass('${escapeJS(pass.gatePassId)}')">
+            Reject
+          </button>
+        </div>
+      `;
+
+      list.appendChild(card);
+    });
+
+  } catch (error) {
+    list.innerHTML =
+      "<div class='panel'>Error: " + escapeHTML(error.message) + "</div>";
+  }
+}
+
+function makeDetail(label, value) {
+  return `
+    <div class="detail">
+      <small>${escapeHTML(label)}</small>
+      <strong>${escapeHTML(value)}</strong>
+    </div>
+  `;
+}
+
+async function approvePass(passId) {
+  if (!confirm("Approve this Gate Pass application?")) return;
+
+  try {
+    const result = await apiRequest({
+      action: "approveHODPass",
+      token: loginToken,
+      gatePassId: passId
+    });
+
+    alert(result.message);
+    await loadPending();
+
+  } catch (error) {
+    alert(error.message);
+  }
+}
+
+async function rejectPass(passId) {
+  const reason = prompt("Enter reason for rejection:");
+
+  if (reason === null) return;
+
+  if (!reason.trim()) {
+    alert("Rejection reason is required.");
+    return;
+  }
+
+  if (!confirm("Send this application to HR for review?")) return;
+
+  try {
+    const result = await apiRequest({
+      action: "rejectHODPass",
+      token: loginToken,
+      gatePassId: passId,
+      reason: reason.trim()
+    });
+
+    alert(result.message);
+    await loadPending();
+
+  } catch (error) {
+    alert(error.message);
+  }
+}
+
+function logout() {
+  loginToken = "";
+  hodEmployee = null;
+
+  document.getElementById("dashboard").classList.add("hidden");
+  document.getElementById("loginPanel").classList.remove("hidden");
+
+  document.getElementById("password").value = "";
+  document.getElementById("loginMessage").textContent = "";
+}
+
+function escapeHTML(value) {
+  return String(value == null ? "" : value).replace(/[&<>"']/g, function(c) {
+    return {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    }[c];
+  });
+}
+
+function escapeJS(value) {
+  return String(value == null ? "" : value)
+    .replace(/\\/g, "\\\\")
+    .replace(/'/g, "\\'")
+    .replace(/\r/g, "")
+    .replace(/\n/g, "");
+}
+</script>
+
+</body>
+</html>
