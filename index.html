@@ -116,12 +116,15 @@
       font-size: 12px;
       line-height: 1.6;
       text-align: center;
+      overflow-wrap: anywhere;
     }
 
-    #applicationMessage {
+    #applicationMessage,
+    #loginMessage {
       text-align: center;
       font-size: 14px;
       margin-top: 15px;
+      line-height: 1.5;
     }
 
     footer {
@@ -180,7 +183,7 @@
 
       </form>
 
-      <p id="loginMessage" style="text-align:center;font-size:14px;"></p>
+      <p id="loginMessage"></p>
 
       <div class="info">
         Use your existing HRMS login credentials.
@@ -218,12 +221,17 @@
 
         <p>
           <b>Sub Department:</b>
-          <span id="showSubDepartment">To be connected</span>
+          <span id="showSubDepartment"></span>
         </p>
 
         <p>
           <b>Designation:</b>
           <span id="showDesignation"></span>
+        </p>
+
+        <p>
+          <b>Gate Pass Role:</b>
+          <span id="showGatePassRole"></span>
         </p>
 
       </div>
@@ -240,7 +248,6 @@
           <option value="Official Work">Official Work</option>
         </select>
 
-
         <label for="destination">Destination Details</label>
 
         <input
@@ -249,7 +256,6 @@
           placeholder="Enter destination details"
           required
         >
-
 
         <label for="purpose">For</label>
 
@@ -260,7 +266,6 @@
           <option value="Dinner">Dinner</option>
           <option value="Other">Other</option>
         </select>
-
 
         <div id="otherCommentBox" style="display:none;">
 
@@ -276,7 +281,6 @@
 
         </div>
 
-
         <button type="submit">
           SUBMIT GATE PASS
         </button>
@@ -289,7 +293,6 @@
 
   </main>
 
-
   <footer>
     GREENPACK INDUSTRIES | Gate Pass System
   </footer>
@@ -297,14 +300,22 @@
 
   <script>
 
-    // EXISTING HRMS LOGIN CONNECTION
+    // EXISTING HRMS LOGIN URL
+    // HRMS project is not modified.
 
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxEmbL8co7DTKuRn2il1iQ5-0j9m3JEOq_5zhJx0x4iuQYozeOkHrbdXknvS01VqsM36A/exec";
+    const HRMS_WEB_APP_URL =
+      "https://script.google.com/macros/s/AKfycbxEmbL8co7DTKuRn2il1iQ5-0j9m3JEOq_5zhJx0x4iuQYozeOkHrbdXknvS01VqsM36A/exec";
+
+
+    // NEW EMPLOYEE GATE PASS BACKEND URL
+
+    const GATE_PASS_WEB_APP_URL =
+      "https://script.google.com/macros/s/AKfycbxJEemVS2S5ZqZXPKVcHEpXZmYxA5RTCHO7gme-0gH_n1xBZCGbSrxdUgDCLu9fjw9Ruw/exec";
 
 
     // EMPLOYEE LOGIN FUNCTION
 
-    function login(event) {
+    async function login(event) {
 
       event.preventDefault();
 
@@ -321,85 +332,127 @@
         document.querySelector("#loginForm button");
 
       message.textContent = "Verifying HRMS login...";
-
       message.style.color = "#183b29";
 
       button.disabled = true;
 
+      try {
 
-      fetch(
-        WEB_APP_URL +
-        "?username=" + encodeURIComponent(username) +
-        "&password=" + encodeURIComponent(password)
-      )
+        const loginUrl =
+          HRMS_WEB_APP_URL +
+          "?username=" + encodeURIComponent(username) +
+          "&password=" + encodeURIComponent(password);
 
-      .then(response => response.json())
+        const response = await fetch(loginUrl);
 
-      .then(data => {
+        const data = await response.json();
 
         console.log("HRMS LOGIN RESPONSE:", data);
 
-        if (data.status === "success") {
+        if (data.status !== "success") {
 
-          localStorage.setItem("orgId", data.orgId);
-          localStorage.setItem("empId", data.empId);
-          localStorage.setItem("empName", data.empName);
-          localStorage.setItem("department", data.department);
-          localStorage.setItem("designation", data.designation);
-          localStorage.setItem("role", data.role);
-          localStorage.setItem("hrmsLoggedIn", "true");
-
-
-          // DISPLAY EMPLOYEE DETAILS
-
-          document.getElementById("showEmpId").textContent =
-            data.empId || "";
-
-          document.getElementById("showEmpName").textContent =
-            data.empName || "";
-
-          document.getElementById("showDepartment").textContent =
-            data.department || "";
-
-          document.getElementById("showDesignation").textContent =
-            data.designation || "";
-
-
-          // SWITCH TO APPLICATION SCREEN
-
-          document.getElementById("loginBox").style.display =
-            "none";
-
-          document.getElementById("applicationBox").style.display =
-            "block";
-
-        } else {
-
-          message.textContent =
-            "Invalid Employee ID or Password.";
-
-          message.style.color = "red";
+          throw new Error("Invalid Employee ID or Password.");
 
         }
 
-      })
 
-      .catch(error => {
+        // SAVE EXISTING HRMS LOGIN DETAILS
+
+        localStorage.setItem("orgId", data.orgId || "");
+        localStorage.setItem("empId", data.empId || "");
+        localStorage.setItem("empName", data.empName || "");
+        localStorage.setItem("department", data.department || "");
+        localStorage.setItem("designation", data.designation || "");
+        localStorage.setItem("role", data.role || "");
+        localStorage.setItem("hrmsLoggedIn", "true");
+
+
+        // FETCH COMPLETE EMPLOYEE PROFILE FROM NEW BACKEND
+
+        message.textContent =
+          "Loading employee details...";
+
+        const profileUrl =
+          GATE_PASS_WEB_APP_URL +
+          "?action=getEmployeeDetails&empId=" +
+          encodeURIComponent(data.empId);
+
+        const profileResponse = await fetch(profileUrl);
+
+        const profileData = await profileResponse.json();
+
+        console.log(
+          "GATE PASS EMPLOYEE RESPONSE:",
+          profileData
+        );
+
+        if (
+          !profileData.success ||
+          !profileData.employee
+        ) {
+          throw new Error(
+            profileData.message ||
+            "Unable to retrieve employee details."
+          );
+        }
+
+        const employee = profileData.employee;
+
+
+        // DISPLAY VERIFIED EMPLOYEE DETAILS
+
+        document.getElementById("showEmpId").textContent =
+          employee.empId || "";
+
+        document.getElementById("showEmpName").textContent =
+          employee.empName || "";
+
+        document.getElementById("showDepartment").textContent =
+          employee.department || "";
+
+        document.getElementById("showSubDepartment").textContent =
+          employee.subDepartment || "";
+
+        document.getElementById("showDesignation").textContent =
+          employee.designation || "";
+
+        document.getElementById("showGatePassRole").textContent =
+          employee.gatePassRole || "";
+
+
+        // KEEP VERIFIED PROFILE FOR THIS PAGE SESSION
+
+        sessionStorage.setItem(
+          "gatePassEmployee",
+          JSON.stringify(employee)
+        );
+
+
+        // SWITCH TO APPLICATION SCREEN
+
+        document.getElementById("loginBox").style.display =
+          "none";
+
+        document.getElementById("applicationBox").style.display =
+          "block";
+
+      } catch (error) {
 
         console.error(error);
 
         message.textContent =
-          "Connection error. Please try again.";
+          error.message || "Connection error. Please try again.";
 
         message.style.color = "red";
 
-      })
+        localStorage.removeItem("hrmsLoggedIn");
+        sessionStorage.removeItem("gatePassEmployee");
 
-      .finally(() => {
+      } finally {
 
         button.disabled = false;
 
-      });
+      }
 
     }
 
@@ -422,7 +475,9 @@
     );
 
 
-    // GATE PASS APPLICATION FORM
+    // GATE PASS FORM
+    // Submission will be enabled after server-side
+    // employee authentication is secured.
 
     document.getElementById("gatePassForm").addEventListener(
       "submit",
@@ -430,8 +485,27 @@
 
         event.preventDefault();
 
+        const employee = sessionStorage.getItem(
+          "gatePassEmployee"
+        );
+
+        if (!employee) {
+
+          document.getElementById("applicationMessage").textContent =
+            "Please login again.";
+
+          document.getElementById("applicationMessage").style.color =
+            "red";
+
+          return;
+
+        }
+
         document.getElementById("applicationMessage").textContent =
-          "Application form is ready. Submission connection will be added next.";
+          "Employee details are connected successfully. Application submission will be enabled after secure server-side login verification.";
+
+        document.getElementById("applicationMessage").style.color =
+          "#9a6500";
 
       }
     );
