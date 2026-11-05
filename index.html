@@ -164,6 +164,65 @@
       </div>
 
     </section>
+  
+<section id="applicationBox" class="login-box" style="display:none;">
+
+  <h2>Apply for Gate Pass</h2>
+  <p class="subtitle">Employee Details</p>
+
+  <div class="info" style="text-align:left;">
+    <p><b>Employee ID:</b> <span id="showEmpId"></span></p>
+    <p><b>Employee Name:</b> <span id="showEmpName"></span></p>
+    <p><b>Department:</b> <span id="showDepartment"></span></p>
+    <p><b>Sub Department:</b> <span id="showSubDepartment">To be connected</span></p>
+    <p><b>Designation:</b> <span id="showDesignation"></span></p>
+  </div>
+
+  <form id="gatePassForm">
+
+    <label for="goingTo">Going To</label>
+    <select id="goingTo" required>
+      <option value="">Select destination</option>
+      <option>Home</option>
+      <option>Hospital</option>
+      <option>Limbejalgaon</option>
+      <option>Official Work</option>
+    </select>
+
+    <label for="destination">Destination Details</label>
+    <input
+      type="text"
+      id="destination"
+      placeholder="Enter destination details"
+      required
+    >
+
+    <label for="purpose">For</label>
+    <select id="purpose" required>
+      <option value="">Select purpose</option>
+      <option>Personal Work</option>
+      <option>Lunch</option>
+      <option>Dinner</option>
+      <option>Other</option>
+    </select>
+
+    <div id="otherCommentBox" style="display:none;">
+      <label for="otherComment">Other Purpose - Comment</label>
+      <textarea
+        id="otherComment"
+        placeholder="Enter reason"
+        rows="3"
+      ></textarea>
+    </div>
+
+    <button type="submit">SUBMIT GATE PASS</button>
+
+  </form>
+
+  <p id="applicationMessage"></p>
+
+</section>
+
   </main>
 
   <footer>
