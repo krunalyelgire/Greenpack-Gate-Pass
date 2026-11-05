@@ -286,6 +286,21 @@ document.getElementById("showDesignation").textContent = data.designation;
     button.disabled = false;
   });
 }
+document.getElementById("purpose").addEventListener("change", function() {
+  const isOther = this.value === "Other";
+
+  document.getElementById("otherCommentBox").style.display =
+    isOther ? "block" : "none";
+
+  document.getElementById("otherComment").required = isOther;
+});
+
+document.getElementById("gatePassForm").addEventListener("submit", function(event) {
+  event.preventDefault();
+
+  document.getElementById("applicationMessage").textContent =
+    "Application form is ready. Submission connection will be added next.";
+});
 </script>
 </body>
 </html>
