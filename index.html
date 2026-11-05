@@ -169,6 +169,61 @@
   <footer>
     GREENPACK INDUSTRIES | Gate Pass System
   </footer>
+<script>
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxEmbL8co7DTKuRn2il1iQ5-0j9m3JEOq_5zhJx0x4iuQYozeOkHrbdXknvS01VqsM36A/exec";
 
+function login(event) {
+  event.preventDefault();
+
+  const username = document.getElementById("empId").value.trim();
+  const password = document.getElementById("password").value.trim();
+  const message = document.getElementById("loginMessage");
+  const button = document.querySelector("#loginForm button");
+
+  message.textContent = "Verifying HRMS login...";
+  button.disabled = true;
+
+  fetch(
+    WEB_APP_URL +
+    "?username=" + encodeURIComponent(username) +
+    "&password=" + encodeURIComponent(password)
+  )
+  .then(response => response.json())
+  .then(data => {
+    console.log("HRMS LOGIN RESPONSE:", data);
+
+    if (data.status === "success") {
+
+      localStorage.setItem("orgId", data.orgId);
+      localStorage.setItem("empId", data.empId);
+      localStorage.setItem("empName", data.empName);
+      localStorage.setItem("department", data.department);
+      localStorage.setItem("designation", data.designation);
+      localStorage.setItem("role", data.role);
+      localStorage.setItem("hrmsLoggedIn", "true");
+
+      message.textContent =
+        "Login successful. Welcome " + data.empName;
+
+      message.style.color = "green";
+
+    } else {
+      message.textContent = "Invalid Employee ID or Password.";
+      message.style.color = "red";
+    }
+  })
+  .catch(error => {
+    console.error(error);
+
+    message.textContent =
+      "Connection error. Please try again.";
+
+    message.style.color = "red";
+  })
+  .finally(() => {
+    button.disabled = false;
+  });
+}
+</script>
 </body>
 </html>
