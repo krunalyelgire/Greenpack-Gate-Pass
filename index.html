@@ -130,29 +130,33 @@
         Gate Pass Application & Approval Portal
       </p>
 
-      <form>
-        <label for="empId">HRMS Employee ID</label>
-        <input
-          type="text"
-          id="empId"
-          placeholder="Enter Employee ID"
-          autocomplete="username"
-          required
-        >
+      <form id="loginForm" onsubmit="login(event)">
 
-        <label for="password">HRMS Password</label>
-        <input
-          type="password"
-          id="password"
-          placeholder="Enter HRMS Password"
-          autocomplete="current-password"
-          required
-        >
+  <label for="empId">HRMS Employee ID</label>
+  <input
+    type="text"
+    id="empId"
+    placeholder="Enter Employee ID"
+    autocomplete="username"
+    required
+  >
 
-        <button type="button" disabled>
-          LOGIN
-        </button>
-      </form>
+  <label for="password">HRMS Password</label>
+  <input
+    type="password"
+    id="password"
+    placeholder="Enter HRMS Password"
+    autocomplete="current-password"
+    required
+  >
+
+  <button type="submit">
+    LOGIN
+  </button>
+
+</form>
+
+<p id="loginMessage" style="text-align:center;font-size:14px;"></p>
 
       <div class="info">
         Use your existing HRMS login credentials.<br>
