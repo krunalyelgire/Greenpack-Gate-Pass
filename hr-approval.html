@@ -1,1 +1,375 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Greenpack HR Gate Pass Approval</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f2f5f3;color:#24352b}
+header{background:linear-gradient(120deg,#0f4d2d,#1b6b3a);color:white;padding:22px;text-align:center}
+header h2{margin:0 0 6px}
+header p{margin:0;font-size:13px}
+.container{max-width:1000px;margin:25px auto;padding:15px}
+.panel{background:white;padding:22px;border-radius:12px;box-shadow:0 3px 15px #00000012;margin-bottom:20px}
+input,textarea{width:100%;padding:12px;margin:8px 0 15px;border:1px solid #ccd5ce;border-radius:7px;font-size:15px}
+button{border:0;border-radius:7px;padding:11px 18px;font-size:14px;font-weight:bold;cursor:pointer;margin:4px}
+.primary{background:#176b3c;color:white}
+.approve{background:#16834b;color:white}
+.reject{background:#c62828;color:white}
+.secondary{background:#e7eee9;color:#244b32}
+button:disabled{opacity:.5;cursor:not-allowed}
+.hidden{display:none}
+.card{border:1px solid #dce5de;border-radius:10px;padding:18px;margin:15px 0}
+.card h3{margin-top:0;color:#176b3c}
+.details{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+.detail{background:#f5f8f5;padding:10px;border-radius:6px;font-size:14px;overflow-wrap:anywhere}
+.detail b{display:block;color:#53665a;font-size:12px;margin-bottom:5px}
+.status{font-weight:bold;color:#a45b00}
+.message{padding:12px;border-radius:7px;margin:12px 0;background:#edf5ef}
+.error{background:#ffeded;color:#a11}
+.qr-area{margin-top:15px;padding:15px;background:#f4f8f5;border-radius:8px;text-align:center}
+.qr-area canvas,.qr-area img{margin:12px auto;display:block}
+.small{font-size:12px;color:#65736a}
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+@media(max-width:600px){.container{padding:10px}.panel{padding:15px}}
+</style>
+</head>
+
+<body>
+
+<header>
+<h2>GREENPACK HRMS</h2>
+<p>HUMAN RESOURCE MANAGEMENT | GATE PASS APPROVAL</p>
+</header>
+
+<div class="container">
+
+<!-- LOGIN -->
+<div class="panel" id="loginPanel">
+<h2>HR Login</h2>
+<p>Login using your existing HRMS credentials.</p>
+
+<label>Employee ID</label>
+<input type="text" id="username" placeholder="Enter Employee ID">
+
+<label>Password</label>
+<input type="password" id="password" placeholder="Enter Password">
+
+<button class="primary" id="loginBtn" onclick="login()">Login</button>
+<div id="loginMessage"></div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard" class="hidden">
+
+<div class="panel">
+<div class="topbar">
+<div>
+<h2 style="margin:0">HR Approval Dashboard</h2>
+<p id="hrInfo" class="small"></p>
+</div>
+<div>
+<button class="secondary" onclick="loadPending()">Refresh</button>
+<button class="reject" onclick="logout()">Logout</button>
+</div>
+</div>
+</div>
+
+<div id="mainMessage"></div>
+<div id="passList"></div>
+
+</div>
+</div>
+
+<script>
+const GATE_PASS_WEB_APP_URL =
+"https://script.google.com/macros/s/AKfycbxJEemVS2S5ZqZXPKVcHEpXZmYxA5RTCHO7gme-0gH_n1xBZCGbSrxdUgDCLu9fjw9Ruw/exec";
+
+let sessionToken = "";
+let loggedInEmployee = null;
+let loading = false;
+
+function escapeHTML(value) {
+  return String(value ?? "").replace(/[&<>"']/g, function(c) {
+    return {
+      "&":"&amp;",
+      "<":"&lt;",
+      ">":"&gt;",
+      '"':"&quot;",
+      "'":"&#39;"
+    }[c];
+  });
+}
+
+async function api(action, data = {}) {
+  const params = new URLSearchParams();
+  params.append("action", action);
+
+  Object.keys(data).forEach(key => {
+    params.append(key, data[key] ?? "");
+  });
+
+  const response = await fetch(GATE_PASS_WEB_APP_URL, {
+    method: "POST",
+    body: params
+  });
+
+  return await response.json();
+}
+
+function showMessage(elementId, message, isError = false) {
+  const element = document.getElementById(elementId);
+  element.innerHTML =
+    '<div class="message ' + (isError ? 'error' : '') + '">' +
+    escapeHTML(message) + '</div>';
+}
+
+async function login() {
+  const username = document.getElementById("username").value.trim();
+  const password = document.getElementById("password").value;
+
+  if (!username || !password) {
+    showMessage("loginMessage", "Enter Employee ID and password.", true);
+    return;
+  }
+
+  const btn = document.getElementById("loginBtn");
+  btn.disabled = true;
+  btn.textContent = "Please wait...";
+  document.getElementById("loginMessage").innerHTML = "";
+
+  try {
+    const result = await api("verifyLogin", {username, password});
+
+    if (!result.success) {
+      throw new Error(result.message || "Login failed.");
+    }
+
+    const employee = result.employee || {};
+
+    const roles = String(employee.gatePassRole || "")
+      .toLowerCase()
+      .split(/[,;]/)
+      .map(role => role.trim());
+
+    if (!roles.includes("hr")) {
+      throw new Error("Access denied. HR role is required.");
+    }
+
+    if (!result.token) {
+      throw new Error("Login token was not returned.");
+    }
+
+    sessionToken = result.token;
+    loggedInEmployee = employee;
+
+    document.getElementById("loginPanel").classList.add("hidden");
+    document.getElementById("dashboard").classList.remove("hidden");
+
+    document.getElementById("hrInfo").textContent =
+      (employee.empName || "") + " | Employee ID: " +
+      (employee.empId || "");
+
+    await loadPending();
+
+  } catch (error) {
+    showMessage("loginMessage", error.message, true);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Login";
+  }
+}
+
+async function loadPending() {
+  if (loading) return;
+  loading = true;
+
+  const list = document.getElementById("passList");
+  list.innerHTML = '<div class="panel">Loading pending applications...</div>';
+
+  try {
+    const result = await api("getHRPendingPasses", {
+      token: sessionToken
+    });
+
+    if (!result.success) {
+      throw new Error(result.message || "Unable to load applications.");
+    }
+
+    const passes = result.passes || [];
+
+    if (passes.length === 0) {
+      list.innerHTML =
+        '<div class="panel"><h3>No pending applications</h3>' +
+        '<p>There are currently no applications waiting for HR approval.</p></div>';
+      return;
+    }
+
+    list.innerHTML = passes.map((p, index) => renderPass(p, index)).join("");
+
+  } catch (error) {
+    list.innerHTML = "";
+    showMessage("mainMessage", error.message, true);
+  } finally {
+    loading = false;
+  }
+}
+
+function renderPass(p, index) {
+  const passId = p.passId || "";
+  const employeeName = p.employeeName || "";
+  const employeeId = p.employeeId || "";
+  const level = p.currentLevel || "";
+
+  return `
+    <div class="card" id="pass-${index}">
+      <h3>Gate Pass: ${escapeHTML(passId)}</h3>
+
+      <p class="status">
+        ${escapeHTML(level)}
+      </p>
+
+      <div class="details">
+        <div class="detail"><b>Employee Name</b>${escapeHTML(employeeName)}</div>
+        <div class="detail"><b>Employee ID</b>${escapeHTML(employeeId)}</div>
+        <div class="detail"><b>Department</b>${escapeHTML(p.department)}</div>
+        <div class="detail"><b>Sub Department</b>${escapeHTML(p.subDepartment)}</div>
+        <div class="detail"><b>Designation</b>${escapeHTML(p.designation)}</div>
+        <div class="detail"><b>Going To</b>${escapeHTML(p.goingTo)}</div>
+        <div class="detail"><b>Destination Details</b>${escapeHTML(p.destination)}</div>
+        <div class="detail"><b>Purpose</b>${escapeHTML(p.purpose)}</div>
+        <div class="detail"><b>Application Date</b>${escapeHTML(p.applicationDate)}</div>
+        <div class="detail"><b>Application Time</b>${escapeHTML(p.applicationTime)}</div>
+        <div class="detail"><b>HOD Approved By</b>${escapeHTML(p.hodApprovedBy || "Not applicable")}</div>
+        <div class="detail"><b>Plant Head Approved By</b>${escapeHTML(p.plantHeadApprovedBy || "Not applicable")}</div>
+      </div>
+
+      ${p.remarks ? `<div class="message"><b>Remarks:</b> ${escapeHTML(p.remarks)}</div>` : ""}
+
+      <div style="margin-top:15px">
+        <button class="approve" id="approve-${index}"
+          onclick="approvePass(${index}, '${escapeHTML(passId)}')">
+          Approve & Generate QR
+        </button>
+
+        <button class="reject" id="reject-${index}"
+          onclick="rejectPass(${index}, '${escapeHTML(passId)}')">
+          Reject
+        </button>
+      </div>
+
+      <div id="qr-${index}"></div>
+    </div>
+  `;
+}
+
+async function approvePass(index, passId) {
+  if (!confirm("Approve this gate pass and generate its QR code?")) return;
+
+  const approveButton = document.getElementById("approve-" + index);
+  const rejectButton = document.getElementById("reject-" + index);
+
+  approveButton.disabled = true;
+  rejectButton.disabled = true;
+
+  try {
+    const result = await api("approveHRPass", {
+      token: sessionToken,
+      passId: passId
+    });
+
+    if (!result.success) {
+      throw new Error(result.message || "Approval failed.");
+    }
+
+    if (!result.qrToken) {
+      throw new Error("Approved, but no QR token was returned. Please check the application in the sheet.");
+    }
+
+    const qrContainer = document.getElementById("qr-" + index);
+    qrContainer.innerHTML = `
+      <div class="qr-area">
+        <h3>Gate Pass Approved</h3>
+        <p>Show this QR code to Security at the gate.</p>
+        <div id="qr-code-${index}"></div>
+        <p class="small">QR Token: ${escapeHTML(result.qrToken)}</p>
+        <button class="secondary" onclick="window.print()">Print QR</button>
+      </div>
+    `;
+
+    new QRCode(document.getElementById("qr-code-" + index), {
+      text: result.qrToken,
+      width: 190,
+      height: 190,
+      correctLevel: QRCode.CorrectLevel.H
+    });
+
+    showMessage("mainMessage", "Gate pass approved and QR code generated.");
+
+  } catch (error) {
+    approveButton.disabled = false;
+    rejectButton.disabled = false;
+    showMessage("mainMessage", error.message, true);
+  }
+}
+
+async function rejectPass(index, passId) {
+  const reason = prompt("Enter reason for rejecting this gate pass:");
+
+  if (reason === null) return;
+
+  if (!reason.trim()) {
+    alert("Please enter a rejection reason.");
+    return;
+  }
+
+  if (!confirm("Are you sure you want to reject this application?")) return;
+
+  const approveButton = document.getElementById("approve-" + index);
+  const rejectButton = document.getElementById("reject-" + index);
+
+  approveButton.disabled = true;
+  rejectButton.disabled = true;
+
+  try {
+    const result = await api("rejectHRPass", {
+      token: sessionToken,
+      passId: passId,
+      reason: reason.trim()
+    });
+
+    if (!result.success) {
+      throw new Error(result.message || "Rejection failed.");
+    }
+
+    showMessage("mainMessage", "Gate pass rejected successfully.");
+    await loadPending();
+
+  } catch (error) {
+    approveButton.disabled = false;
+    rejectButton.disabled = false;
+    showMessage("mainMessage", error.message, true);
+  }
+}
+
+function logout() {
+  sessionToken = "";
+  loggedInEmployee = null;
+
+  document.getElementById("dashboard").classList.add("hidden");
+  document.getElementById("loginPanel").classList.remove("hidden");
+  document.getElementById("password").value = "";
+  document.getElementById("loginMessage").innerHTML = "";
+  document.getElementById("mainMessage").innerHTML = "";
+  document.getElementById("passList").innerHTML = "";
+}
+</script>
+
+</body>
+</html>
+
