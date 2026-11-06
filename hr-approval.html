@@ -337,11 +337,10 @@ async function rejectPass(index, passId) {
 
   try {
     const result = await api("rejectHRPass", {
-      token: sessionToken,
-      passId: passId,
-      reason: reason.trim()
-    });
-
+  token: sessionToken,
+  gatePassId: passId,
+  reason: reason.trim()
+});
     if (!result.success) {
       throw new Error(result.message || "Rejection failed.");
     }
