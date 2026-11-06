@@ -706,6 +706,7 @@ document.getElementById("gatePassForm").addEventListener(
       // Prevent accidental duplicate submission.
 
       this.reset();
+      await loadMyGatePasses();
 
       document.getElementById("otherCommentBox").style.display =
         "none";
