@@ -279,10 +279,9 @@ async function approvePass(index, passId) {
 
   try {
     const result = await api("approveHRPass", {
-      token: sessionToken,
-      passId: passId
-    });
-
+  token: sessionToken,
+  gatePassId: passId
+});
     if (!result.success) {
       throw new Error(result.message || "Approval failed.");
     }
