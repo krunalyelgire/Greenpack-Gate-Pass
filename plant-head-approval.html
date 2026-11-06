@@ -1,1 +1,449 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Greenpack - Plant Head Approval</title>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f3f6f4;
+  color: #26352b;
+}
+
+header {
+  background: linear-gradient(135deg, #0f4d2d, #1b6b3a);
+  color: white;
+  padding: 22px;
+  text-align: center;
+}
+
+header h2 {
+  margin: 0 0 7px;
+}
+
+.container {
+  max-width: 950px;
+  margin: 25px auto;
+  padding: 15px;
+}
+
+.panel {
+  background: white;
+  padding: 22px;
+  border-radius: 12px;
+  box-shadow: 0 3px 12px #00000012;
+  margin-bottom: 20px;
+}
+
+input {
+  width: 100%;
+  padding: 12px;
+  margin: 8px 0 15px;
+  border: 1px solid #ccc;
+  border-radius: 7px;
+  font-size: 16px;
+}
+
+button {
+  border: 0;
+  padding: 11px 17px;
+  border-radius: 7px;
+  color: white;
+  cursor: pointer;
+  font-size: 14px;
+  margin: 5px 5px 5px 0;
+}
+
+.primary {
+  background: #176b3c;
+}
+
+.approve {
+  background: #18834a;
+}
+
+.reject {
+  background: #c83e3e;
+}
+
+.secondary {
+  background: #59665d;
+}
+
+.hidden {
+  display: none;
+}
+
+.pass-card {
+  border: 1px solid #dce6df;
+  padding: 18px;
+  border-radius: 10px;
+  margin: 15px 0;
+  background: #fff;
+}
+
+.pass-card h3 {
+  color: #176b3c;
+  margin-top: 0;
+  overflow-wrap: anywhere;
+}
+
+.detail {
+  margin: 8px 0;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.label {
+  font-weight: bold;
+}
+
+.message {
+  margin-top: 12px;
+  font-weight: bold;
+}
+
+@media(max-width:600px) {
+  .container {
+    margin: 10px auto;
+  }
+
+  .panel {
+    padding: 15px;
+  }
+
+  button {
+    padding: 12px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h2>GREENPACK HRMS</h2>
+  <div>Employee Gate Pass - Plant Head Approval Portal</div>
+</header>
+
+<div class="container">
+
+  <div id="loginPanel" class="panel">
+    <h3>Plant Head Login</h3>
+
+    <label>Employee ID</label>
+    <input id="username" type="text"
+      placeholder="Enter Employee ID">
+
+    <label>Password</label>
+    <input id="password" type="password"
+      placeholder="Enter HRMS password">
+
+    <button class="primary" onclick="login()">
+      Login
+    </button>
+
+    <div id="loginMessage" class="message"></div>
+  </div>
+
+  <div id="dashboard" class="hidden">
+
+    <div class="panel">
+      <h3 id="welcome"></h3>
+      <div>Plant Head Approval Dashboard</div>
+
+      <button class="primary" onclick="loadPendingPasses()">
+        Refresh
+      </button>
+
+      <button class="secondary" onclick="logout()">
+        Logout
+      </button>
+    </div>
+
+    <div class="panel">
+      <h3>Pending Gate Pass Applications</h3>
+      <div id="passList">Loading...</div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+const GATE_PASS_WEB_APP_URL =
+"https://script.google.com/macros/s/AKfycbxJEemVS2S5ZqZXPKVcHEpXZmYxA5RTCHO7gme-0gH_n1xBZCGbSrxdUgDCLu9fjw9Ruw/exec";
+
+let loginToken = "";
+let plantHeadEmployee = null;
+
+async function apiRequest(action, data = {}) {
+  const params = new URLSearchParams({
+    action: action,
+    ...data
+  });
+
+  const response = await fetch(
+    GATE_PASS_WEB_APP_URL,
+    {
+      method: "POST",
+      body: params
+    }
+  );
+
+  return await response.json();
+}
+
+async function login() {
+  const username =
+    document.getElementById("username").value.trim();
+
+  const password =
+    document.getElementById("password").value;
+
+  const message =
+    document.getElementById("loginMessage");
+
+  message.textContent = "Checking login...";
+
+  try {
+    const result = await apiRequest("verifyLogin", {
+      username: username,
+      password: password
+    });
+
+    if (!result.success) {
+      throw new Error(result.message || "Login failed.");
+    }
+
+    const employee = result.employee;
+
+    const roles = String(employee.gatePassRole || "")
+      .split(/[,;]+/)
+      .map(r => r.trim().toLowerCase());
+
+    if (!roles.includes("plant head")) {
+      throw new Error(
+        "You are not authorized as Plant Head."
+      );
+    }
+
+    loginToken = result.token;
+    plantHeadEmployee = employee;
+
+    document.getElementById("loginPanel")
+      .classList.add("hidden");
+
+    document.getElementById("dashboard")
+      .classList.remove("hidden");
+
+    document.getElementById("welcome").textContent =
+      "Welcome, " + employee.empName;
+
+    await loadPendingPasses();
+
+  } catch (error) {
+    message.textContent = error.message;
+  }
+}
+
+async function loadPendingPasses() {
+  const list = document.getElementById("passList");
+  list.textContent = "Loading applications...";
+
+  try {
+    const result = await apiRequest(
+      "getPlantHeadPendingPasses",
+      { token: loginToken }
+    );
+
+    if (!result.success) {
+      throw new Error(result.message);
+    }
+
+    if (!result.passes || result.passes.length === 0) {
+      list.textContent =
+        "No pending applications found.";
+      return;
+    }
+
+    list.innerHTML = result.passes.map(pass => `
+      <div class="pass-card">
+
+        <h3>Gate Pass: ${escapeHTML(pass.gatePassId)}</h3>
+
+        <div class="detail">
+          <span class="label">Employee ID:</span>
+          ${escapeHTML(pass.empId)}
+        </div>
+
+        <div class="detail">
+          <span class="label">Employee Name:</span>
+          ${escapeHTML(pass.empName)}
+        </div>
+
+        <div class="detail">
+          <span class="label">Department:</span>
+          ${escapeHTML(pass.department)}
+        </div>
+
+        <div class="detail">
+          <span class="label">Sub Department:</span>
+          ${escapeHTML(pass.subDepartment)}
+        </div>
+
+        <div class="detail">
+          <span class="label">Designation:</span>
+          ${escapeHTML(pass.designation)}
+        </div>
+
+        <div class="detail">
+          <span class="label">Going To:</span>
+          ${escapeHTML(pass.goingTo)}
+        </div>
+
+        <div class="detail">
+          <span class="label">Destination Details:</span>
+          ${escapeHTML(pass.destination)}
+        </div>
+
+        <div class="detail">
+          <span class="label">Purpose:</span>
+          ${escapeHTML(pass.purpose)}
+        </div>
+
+        <div class="detail">
+          <span class="label">Application Date:</span>
+          ${escapeHTML(pass.applicationDate)}
+        </div>
+
+        <div class="detail">
+          <span class="label">Application Time:</span>
+          ${escapeHTML(pass.applicationTime)}
+        </div>
+
+        <div class="detail">
+          <span class="label">HOD Approved By:</span>
+          ${escapeHTML(pass.hodApprovedBy)}
+        </div>
+
+        <button class="approve"
+          onclick="approvePass('${escapeJS(pass.gatePassId)}')">
+          Approve
+        </button>
+
+        <button class="reject"
+          onclick="rejectPass('${escapeJS(pass.gatePassId)}')">
+          Reject
+        </button>
+
+      </div>
+    `).join("");
+
+  } catch (error) {
+    list.textContent = error.message;
+  }
+}
+
+async function approvePass(gatePassId) {
+  if (!confirm(
+    "Are you sure you want to approve this Gate Pass?"
+  )) return;
+
+  try {
+    const result = await apiRequest(
+      "approvePlantHeadPass",
+      {
+        token: loginToken,
+        gatePassId: gatePassId
+      }
+    );
+
+    if (!result.success) {
+      throw new Error(result.message);
+    }
+
+    alert(result.message);
+    await loadPendingPasses();
+
+  } catch (error) {
+    alert(error.message);
+  }
+}
+
+async function rejectPass(gatePassId) {
+  const reason = prompt(
+    "Enter reason for rejection:"
+  );
+
+  if (!reason || !reason.trim()) {
+    alert("Rejection reason is required.");
+    return;
+  }
+
+  try {
+    const result = await apiRequest(
+      "rejectPlantHeadPass",
+      {
+        token: loginToken,
+        gatePassId: gatePassId,
+        reason: reason.trim()
+      }
+    );
+
+    if (!result.success) {
+      throw new Error(result.message);
+    }
+
+    alert(result.message);
+    await loadPendingPasses();
+
+  } catch (error) {
+    alert(error.message);
+  }
+}
+
+function logout() {
+  loginToken = "";
+  plantHeadEmployee = null;
+
+  document.getElementById("dashboard")
+    .classList.add("hidden");
+
+  document.getElementById("loginPanel")
+    .classList.remove("hidden");
+
+  document.getElementById("password").value = "";
+  document.getElementById("loginMessage").textContent = "";
+}
+
+function escapeHTML(value) {
+  return String(value ?? "").replace(/[&<>"']/g, c => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  })[c]);
+}
+
+function escapeJS(value) {
+  return String(value ?? "")
+    .replace(/\\/g, "\\\\")
+    .replace(/'/g, "\\'")
+    .replace(/\r/g, "\\r")
+    .replace(/\n/g, "\\n");
+}
+</script>
+
+</body>
+</html>
+
