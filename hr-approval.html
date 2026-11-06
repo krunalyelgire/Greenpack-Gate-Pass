@@ -221,9 +221,9 @@ async function loadPending() {
 }
 
 function renderPass(p, index) {
-  const passId = p.passId || "";
-  const employeeName = p.employeeName || "";
-  const employeeId = p.employeeId || "";
+  const passId = p.passId || p.gatePassId || p.gatePassID || p.id || "";
+const employeeName = p.employeeName || p.empName || "";
+const employeeId = p.employeeId || p.empId || "";
   const level = p.currentLevel || "";
 
   return `
