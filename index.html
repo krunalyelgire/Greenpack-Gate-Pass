@@ -356,7 +356,144 @@ async function postToBackend(parameters) {
   return await response.json();
 }
 
+// LOAD EMPLOYEE GATE PASS HISTORY AND LATEST QR
 
+function escapeHTML(value) {
+  return String(value == null ? "" : value).replace(
+    /[&<>"']/g,
+    function(character) {
+      return {
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+      }[character];
+    }
+  );
+}
+
+
+async function loadMyGatePasses() {
+
+  const message = document.getElementById("latestPassMessage");
+  const qrBox = document.getElementById("employeeQrCode");
+  const passIdBox = document.getElementById("latestQrPassId");
+  const historyBox = document.getElementById("gatePassHistory");
+
+  qrBox.innerHTML = "";
+  passIdBox.textContent = "";
+
+  message.textContent = "Loading your gate pass...";
+  historyBox.textContent = "Loading history...";
+
+  try {
+
+    const token = sessionStorage.getItem("gatePassToken");
+
+    if (!token) {
+      throw new Error("Login session expired. Please login again.");
+    }
+
+    const result = await postToBackend({
+      action: "getMyGatePasses",
+      token: token
+    });
+
+    if (!result.success) {
+      throw new Error(result.message || "Unable to load gate pass history.");
+    }
+
+    const passes = result.passes || [];
+    const latest = result.latestPass;
+
+    // SHOW QR ONLY FOR THE LATEST HR-APPROVED APPLICATION.
+
+    if (
+      latest &&
+      latest.status === "Approved" &&
+      result.qrToken
+    ) {
+
+      message.textContent = "Your latest gate pass is approved. Show this QR code to Security.";
+
+      new QRCode(qrBox, {
+        text: result.qrToken,
+        width: 220,
+        height: 220
+      });
+
+      passIdBox.textContent =
+        "Gate Pass ID: " + latest.gatePassId;
+
+    } else if (latest) {
+
+      message.textContent =
+        "Latest Gate Pass Status: " + latest.status +
+        ". Your QR code will be available after final HR approval.";
+
+    } else {
+
+      message.textContent = "You have not applied for any gate pass yet.";
+
+    }
+
+    // SHOW COMPLETE APPLICATION HISTORY.
+
+    if (passes.length === 0) {
+
+      historyBox.textContent = "No gate pass records found.";
+
+      return;
+    }
+
+    historyBox.innerHTML = passes.slice().reverse().map(function(pass) {
+
+      return `
+        <div class="history-item">
+
+          <p><b>Gate Pass ID:</b> ${escapeHTML(pass.gatePassId)}</p>
+          <p><b>Application Date:</b> ${escapeHTML(pass.applicationDate)}</p>
+          <p><b>Application Time:</b> ${escapeHTML(pass.applicationTime)}</p>
+          <p><b>Going To:</b> ${escapeHTML(pass.goingTo)}</p>
+          <p><b>Destination:</b> ${escapeHTML(pass.destination)}</p>
+          <p><b>Purpose:</b> ${escapeHTML(pass.purpose)}</p>
+
+          <p class="history-status">
+            Status: ${escapeHTML(pass.status)}
+          </p>
+
+          <p><b>HOD Approved By:</b> ${escapeHTML(pass.hodApprovedBy)}</p>
+          <p><b>HOD Approval Time:</b> ${escapeHTML(pass.hodApprovalTime)}</p>
+
+          <p><b>Plant Head Approved By:</b> ${escapeHTML(pass.plantHeadApprovedBy)}</p>
+          <p><b>Plant Head Approval Time:</b> ${escapeHTML(pass.plantHeadApprovalTime)}</p>
+
+          <p><b>HR Approved By:</b> ${escapeHTML(pass.hrApprovedBy)}</p>
+          <p><b>HR Approval Time:</b> ${escapeHTML(pass.hrApprovalTime)}</p>
+
+          <p><b>Security OUT:</b> ${escapeHTML(pass.securityOutTime)}</p>
+          <p><b>OUT Security ID:</b> ${escapeHTML(pass.outSecurityId)}</p>
+
+          <p><b>Security IN:</b> ${escapeHTML(pass.securityInTime)}</p>
+          <p><b>IN Security ID:</b> ${escapeHTML(pass.inSecurityId)}</p>
+
+          <p><b>Remarks:</b> ${escapeHTML(pass.remarks)}</p>
+
+        </div>
+      `;
+
+    }).join("");
+
+  } catch (error) {
+
+    console.error(error);
+
+    message.textContent = error.message;
+    historyBox.textContent = "Unable to load gate pass history.";
+
+  }
+}
 // EMPLOYEE LOGIN
 
 document.getElementById("loginForm").addEventListener(
