@@ -1,1 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Greenpack Gate Pass Reports</title>
 
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f1f5f2;
+      color: #183b29;
+    }
+
+    header {
+      background: linear-gradient(135deg, #0f4d2d, #1b6b3a);
+      color: white;
+      padding: 22px 15px;
+      text-align: center;
+    }
+
+    header h1 {
+      margin: 0 0 6px;
+      font-size: 24px;
+    }
+
+    header p {
+      margin: 0;
+      font-size: 13px;
+    }
+
+    main {
+      max-width: 1200px;
+      margin: 30px auto;
+      padding: 0 16px 30px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 14px;
+      padding: 24px;
+      box-shadow: 0 5px 22px #00000012;
+      margin-bottom: 20px;
+    }
+
+    h2 {
+      margin-top: 0;
+      text-align: center;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #718078;
+      font-size: 14px;
+      margin-bottom: 22px;
+    }
+
+    .filters {
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+      align-items: end;
+    }
+
+    .field {
+      flex: 1;
+      min-width: 180px;
+    }
+
+    label {
+      display: block;
+      font-weight: bold;
+      font-size: 14px;
+      margin-bottom: 7px;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ccd8cf;
+      border-radius: 8px;
+      font-size: 15px;
+    }
+
+    button {
+      padding: 13px 22px;
+      background: #1b6b3a;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+    }
+
+    #message {
+      text-align: center;
+      margin-top: 16px;
+      font-size: 14px;
+    }
+
+    .report-info {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 16px;
+      font-size: 14px;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid #dce8df;
+      border-radius: 10px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    th {
+      background: #0f4d2d;
+      color: white;
+      padding: 11px;
+      text-align: left;
+    }
+
+    td {
+      padding: 10px;
+      border-bottom: 1px solid #e3ebe5;
+    }
+
+    tr:nth-child(even) {
+      background: #f7faf8;
+    }
+
+    .download-area {
+      margin-top: 18px;
+      text-align: right;
+    }
+
+    #downloadButton {
+      display: none;
+    }
+
+    footer {
+      text-align: center;
+      color: #718078;
+      font-size: 12px;
+      padding: 20px;
+    }
+
+    @media (max-width: 600px) {
+      .card {
+        padding: 18px;
+      }
+
+      .filters {
+        display: block;
+      }
+
+      .field {
+        margin-bottom: 14px;
+      }
+
+      .filters button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <h1>GREENPACK GATE PASS REPORTS</h1>
+  <p>GREENPACK INDUSTRIES</p>
+</header>
+
+<main>
+
+  <!-- LOGIN -->
+
+  <section id="loginCard" class="card" style="max-width:420px;margin:30px auto;">
+
+    <h2>HR Login</h2>
+
+    <p class="subtitle">
+      Authorized HR users only
+    </p>
+
+    <form id="loginForm">
+
+      <label for="empId">Employee ID</label>
+      <input
+        type="text"
+        id="empId"
+        placeholder="Enter Employee ID"
+        required
+      >
+
+      <label for="password">Password</label>
+      <input
+        type="password"
+        id="password"
+        placeholder="Enter HRMS Password"
+        required
+      >
+
+      <button type="submit" style="width:100%;margin-top:20px;">
+        LOGIN
+      </button>
+
+    </form>
+
+    <p id="loginMessage"></p>
+
+  </section>
+
+
+  <!-- REPORT -->
+
+  <section id="reportSection" style="display:none;">
+
+    <div class="card">
+
+      <h2>Gate Pass Report</h2>
+
+      <p class="subtitle">
+        Select a date range to view and download Gate Pass records
+      </p>
+
+      <div class="filters">
+
+        <div class="field">
+          <label for="fromDate">From Date</label>
+          <input type="date" id="fromDate">
+        </div>
+
+        <div class="field">
+          <label for="toDate">To Date</label>
+          <input type="date" id="toDate">
+        </div>
+
+        <button id="generateButton">
+          GENERATE REPORT
+        </button>
+
+      </div>
+
+      <p id="message"></p>
+
+    </div>
+
+
+    <div id="resultsCard" class="card" style="display:none;">
+
+      <div class="report-info">
+        <span id="reportCount"></span>
+        <span id="reportPeriod"></span>
+      </div>
+
+      <div class="table-wrap">
+
+        <table id="reportTable">
+
+          <thead>
+            <tr>
+              <th>Gate Pass ID</th>
+              <th>Employee ID</th>
+              <th>Employee Name</th>
+              <th>Department</th>
+              <th>Sub Department</th>
+              <th>Designation</th>
+              <th>Going To</th>
+              <th>Destination</th>
+              <th>Purpose</th>
+              <th>Application Date</th>
+              <th>Application Time</th>
+              <th>Status</th>
+              <th>HOD Approved By</th>
+              <th>HOD Approval Time</th>
+              <th>Plant Head Approved By</th>
+              <th>Plant Head Approval Time</th>
+              <th>HR Approved By</th>
+              <th>HR Approval Time</th>
+              <th>Security OUT Time</th>
+              <th>OUT Security ID</th>
+              <th>Security IN Time</th>
+              <th>IN Security ID</th>
+              <th>Remarks</th>
+            </tr>
+          </thead>
+
+          <tbody id="reportBody"></tbody>
+
+        </table>
+
+      </div>
+
+      <div class="download-area">
+        <button id="downloadButton">
+          DOWNLOAD CSV
+        </button>
+      </div>
+
+    </div>
+
+  </section>
+
+</main>
+
+<footer>
+  GREENPACK INDUSTRIES | Online Gate Pass System
+</footer>
+
+
+<script>
+
+const GATE_PASS_WEB_APP_URL =
+  "https://script.google.com/macros/s/AKfycbxJEemVS2S5ZqZXPKVcHEpXZmYxA5RTCHO7gme-0gH_n1xBZCGbSrxdUgDCLu9fjw9Ruw/exec";
+
+
+let reportRecords = [];
+
+
+async function postToBackend(parameters) {
+
+  const body = new URLSearchParams();
+
+  Object.keys(parameters).forEach(function(key) {
+    body.append(key, parameters[key]);
+  });
+
+  const response = await fetch(GATE_PASS_WEB_APP_URL, {
+    method: "POST",
+    body: body
+  });
+
+  if (!response.ok) {
+    throw new Error("Server connection failed.");
+  }
+
+  return await response.json();
+}
+
+
+// HR LOGIN
+
+document.getElementById("loginForm").addEventListener(
+  "submit",
+  async function(event) {
+
+    event.preventDefault();
+
+    const button = this.querySelector("button");
+    const message = document.getElementById("loginMessage");
+
+    const username =
+      document.getElementById("empId").value.trim();
+
+    const password =
+      document.getElementById("password").value;
+
+    button.disabled = true;
+    message.textContent = "Verifying login...";
+
+    try {
+
+      const result = await postToBackend({
+        action: "verifyLogin",
+        username: username,
+        password: password
+      });
+
+      if (!result.success || !result.token) {
+        throw new Error(
+          result.message || "Login failed."
+        );
+      }
+
+      const role = String(
+        result.employee.gatePassRole || ""
+      ).toLowerCase();
+
+      if (!role.split(/[,;]+/).map(r => r.trim()).includes("hr")) {
+        throw new Error(
+          "You are not authorized to access Gate Pass Reports."
+        );
+      }
+
+      sessionStorage.setItem(
+        "gatePassReportToken",
+        result.token
+      );
+
+      document.getElementById("loginCard").style.display =
+        "none";
+
+      document.getElementById("reportSection").style.display =
+        "block";
+
+      // Default to the current month.
+
+      const today = new Date();
+
+      const firstDay = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        1
+      );
+
+      document.getElementById("fromDate").value =
+        firstDay.toISOString().split("T")[0];
+
+      document.getElementById("toDate").value =
+        today.toISOString().split("T")[0];
+
+      message.textContent = "";
+
+    } catch (error) {
+
+      console.error(error);
+
+      sessionStorage.removeItem("gatePassReportToken");
+
+      message.style.color = "red";
+      message.textContent =
+        error.message || "Login failed.";
+
+    } finally {
+
+      button.disabled = false;
+      document.getElementById("password").value = "";
+
+    }
+
+  }
+);
+
+
+// GENERATE REPORT
+
+document.getElementById("generateButton").addEventListener(
+  "click",
+  async function() {
+
+    const token = sessionStorage.getItem(
+      "gatePassReportToken"
+    );
+
+    const fromDate =
+      document.getElementById("fromDate").value;
+
+    const toDate =
+      document.getElementById("toDate").value;
+
+    const message =
+      document.getElementById("message");
+
+    const button =
+      document.getElementById("generateButton");
+
+    if (!token) {
+      message.style.color = "red";
+      message.textContent =
+        "Login session expired. Please login again.";
+      return;
+    }
+
+    if (!fromDate || !toDate) {
+      message.style.color = "red";
+      message.textContent =
+        "Please select both dates.";
+      return;
+    }
+
+    button.disabled = true;
+    message.style.color = "#183b29";
+    message.textContent = "Generating report...";
+
+    try {
+
+      const result = await postToBackend({
+        action: "getGatePassReport",
+        token: token,
+        fromDate: fromDate,
+        toDate: toDate
+      });
+
+      if (!result.success) {
+        throw new Error(
+          result.message || "Unable to generate report."
+        );
+      }
+
+      reportRecords = result.records || [];
+
+      displayReport(
+        reportRecords,
+        result.fromDate,
+        result.toDate
+      );
+
+      message.textContent = "";
+
+    } catch (error) {
+
+      console.error(error);
+
+      message.style.color = "red";
+      message.textContent =
+        error.message || "Unable to generate report.";
+
+    } finally {
+
+      button.disabled = false;
+
+    }
+
+  }
+);
+
+
+function escapeHTML(value) {
+
+  return String(value == null ? "" : value).replace(
+    /[&<>"']/g,
+    function(character) {
+      return {
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+      }[character];
+    }
+  );
+}
+
+
+// DISPLAY REPORT
+
+function displayReport(records, fromDate, toDate) {
+
+  const body =
+    document.getElementById("reportBody");
+
+  const resultsCard =
+    document.getElementById("resultsCard");
+
+  const downloadButton =
+    document.getElementById("downloadButton");
+
+  document.getElementById("reportCount").textContent =
+    "Total Records: " + records.length;
+
+  document.getElementById("reportPeriod").textContent =
+    "Period: " + fromDate + " to " + toDate;
+
+  body.innerHTML = records.map(function(record) {
+
+    return `
+      <tr>
+        <td>${escapeHTML(record.gatePassId)}</td>
+        <td>${escapeHTML(record.empId)}</td>
+        <td>${escapeHTML(record.empName)}</td>
+        <td>${escapeHTML(record.department)}</td>
+        <td>${escapeHTML(record.subDepartment)}</td>
+        <td>${escapeHTML(record.designation)}</td>
+        <td>${escapeHTML(record.goingTo)}</td>
+        <td>${escapeHTML(record.destination)}</td>
+        <td>${escapeHTML(record.purpose)}</td>
+        <td>${escapeHTML(record.applicationDate)}</td>
+        <td>${escapeHTML(record.applicationTime)}</td>
+        <td>${escapeHTML(record.status)}</td>
+        <td>${escapeHTML(record.hodApprovedBy)}</td>
+        <td>${escapeHTML(record.hodApprovalTime)}</td>
+        <td>${escapeHTML(record.plantHeadApprovedBy)}</td>
+        <td>${escapeHTML(record.plantHeadApprovalTime)}</td>
+        <td>${escapeHTML(record.hrApprovedBy)}</td>
+        <td>${escapeHTML(record.hrApprovalTime)}</td>
+        <td>${escapeHTML(record.securityOutTime)}</td>
+        <td>${escapeHTML(record.outSecurityId)}</td>
+        <td>${escapeHTML(record.securityInTime)}</td>
+        <td>${escapeHTML(record.inSecurityId)}</td>
+        <td>${escapeHTML(record.remarks)}</td>
+      </tr>
+    `;
+
+  }).join("");
+
+  if (records.length === 0) {
+    body.innerHTML =
+      `<tr><td colspan="23" style="text-align:center;">
+        No records found for the selected period.
+      </td></tr>`;
+  }
+
+  resultsCard.style.display = "block";
+  downloadButton.style.display =
+    records.length > 0 ? "inline-block" : "none";
+}
+
+
+// DOWNLOAD CSV
+
+document.getElementById("downloadButton").addEventListener(
+  "click",
+  function() {
+
+    const headers = [
+      "Gate Pass ID",
+      "Employee ID",
+      "Employee Name",
+      "Department",
+      "Sub Department",
+      "Designation",
+      "Going To",
+      "Destination",
+      "Purpose",
+      "Application Date",
+      "Application Time",
+      "Status",
+      "HOD Approved By",
+      "HOD Approval Time",
+      "Plant Head Approved By",
+      "Plant Head Approval Time",
+      "HR Approved By",
+      "HR Approval Time",
+      "Security OUT Time",
+      "OUT Security ID",
+      "Security IN Time",
+      "IN Security ID",
+      "Remarks"
+    ];
+
+    const csvRows = [];
+
+    csvRows.push(
+      headers.map(csvEscape).join(",")
+    );
+
+    reportRecords.forEach(function(record) {
+
+      const row = [
+        record.gatePassId,
+        record.empId,
+        record.empName,
+        record.department,
+        record.subDepartment,
+        record.designation,
+        record.goingTo,
+        record.destination,
+        record.purpose,
+        record.applicationDate,
+        record.applicationTime,
+        record.status,
+        record.hodApprovedBy,
+        record.hodApprovalTime,
+        record.plantHeadApprovedBy,
+        record.plantHeadApprovalTime,
+        record.hrApprovedBy,
+        record.hrApprovalTime,
+        record.securityOutTime,
+        record.outSecurityId,
+        record.securityInTime,
+        record.inSecurityId,
+        record.remarks
+      ];
+
+      csvRows.push(
+        row.map(csvEscape).join(",")
+      );
+
+    });
+
+    const csvContent =
+      "\uFEFF" + csvRows.join("\n");
+
+    const blob = new Blob(
+      [csvContent],
+      { type: "text/csv;charset=utf-8;" }
+    );
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    const fromDate =
+      document.getElementById("fromDate").value;
+
+    const toDate =
+      document.getElementById("toDate").value;
+
+    link.href = url;
+
+    link.download =
+      "Greenpack_Gate_Pass_Report_" +
+      fromDate +
+      "_to_" +
+      toDate +
+      ".csv";
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    URL.revokeObjectURL(url);
+
+  }
+);
+
+
+function csvEscape(value) {
+
+  const text = String(
+    value == null ? "" : value
+  );
+
+  return '"' +
+    text.replace(/"/g, '""') +
+    '"';
+}
+
+</script>
+
+</body>
+</html>
