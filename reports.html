@@ -262,7 +262,42 @@
 
 <button id="generateButton">
           GENERATE REPORT
-        </button>
+async function loadEmployeeList() {
+
+  const token = sessionStorage.getItem(
+    "gatePassReportToken"
+  );
+
+  const employeeFilter =
+    document.getElementById("employeeFilter");
+
+  employeeFilter.innerHTML =
+    '<option value="">All Employees</option>';
+
+  const result = await postToBackend({
+    action: "getReportEmployeeList",
+    token: token
+  });
+
+  if (!result.success) {
+    throw new Error(
+      result.message || "Unable to load employee list."
+    );
+  }
+
+  (result.employees || []).forEach(function(employee) {
+
+    const option = document.createElement("option");
+
+    option.value = employee.empId;
+    option.textContent =
+      employee.empName + " (" + employee.empId + ")";
+
+    employeeFilter.appendChild(option);
+
+  });
+}        
+</button>
 
       </div>
 
