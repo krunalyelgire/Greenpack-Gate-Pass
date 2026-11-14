@@ -432,9 +432,12 @@ document.getElementById("loginForm").addEventListener(
         firstDay.toISOString().split("T")[0];
 
       document.getElementById("toDate").value =
-        today.toISOString().split("T")[0];
+  today.toISOString().split("T")[0];
 
-      message.textContent = "";
+// Load employee list for the report filter.
+await loadEmployeeList();
+
+message.textContent = "";
 
     } catch (error) {
 
