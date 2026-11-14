@@ -539,11 +539,12 @@ const employeeId =
     try {
 
       const result = await postToBackend({
-        action: "getGatePassReport",
-        token: token,
-        fromDate: fromDate,
-        toDate: toDate
-      });
+  action: "getGatePassReport",
+  token: token,
+  fromDate: fromDate,
+  toDate: toDate,
+  employeeId: employeeId
+});
 
       if (!result.success) {
         throw new Error(
