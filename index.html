@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -124,45 +123,38 @@
       font-size: 12px;
       padding: 20px;
     }
+
     .pass-history {
-  margin-top: 22px;
-  padding: 18px;
-  background: white;
-  border: 1px solid #dce8df;
-  border-radius: 12px;
-}
+      margin-top: 22px;
+      padding: 18px;
+      background: white;
+      border: 1px solid #dce8df;
+      border-radius: 12px;
+    }
 
-.pass-history h3 {
-  text-align: center;
-  margin: 5px 0 15px;
-}
+    .pass-history h3 {
+      text-align: center;
+      margin: 5px 0 15px;
+    }
 
-#employeeQrCode {
-  display: flex;
-  justify-content: center;
-  margin: 18px auto;
-  padding: 15px;
-  background: white;
-}
+    .history-item {
+      padding: 14px;
+      margin-top: 12px;
+      background: #f1f5f2;
+      border-radius: 9px;
+      font-size: 13px;
+      line-height: 1.7;
+      overflow-wrap: anywhere;
+    }
 
-.history-item {
-  padding: 14px;
-  margin-top: 12px;
-  background: #f1f5f2;
-  border-radius: 9px;
-  font-size: 13px;
-  line-height: 1.7;
-  overflow-wrap: anywhere;
-}
+    .history-item p {
+      margin: 3px 0;
+    }
 
-.history-item p {
-  margin: 3px 0;
-}
-
-.history-status {
-  font-weight: bold;
-  color: #1b6b3a;
-}
+    .history-status {
+      font-weight: bold;
+      color: #1b6b3a;
+    }
   </style>
 </head>
 
@@ -287,27 +279,24 @@
     </form>
 
     <p id="applicationMessage"></p>
-  <div class="pass-history">
 
-  <h3>My Latest Gate Pass</h3>
+    <div class="pass-history">
 
-  <p id="latestPassMessage" style="text-align:center;">
-    Your latest gate pass will appear here.
-  </p>
+      <h3>My Latest Gate Pass</h3>
 
-  <div id="employeeQrCode"></div>
+      <p id="latestPassMessage" style="text-align:center;">
+        Your latest gate pass will appear here.
+      </p>
 
-  <p id="latestQrPassId" style="text-align:center;"></p>
+      <hr>
 
-  <hr>
+      <h3>My Gate Pass History</h3>
 
-  <h3>My Gate Pass History</h3>
+      <div id="gatePassHistory">
+        Loading gate pass history...
+      </div>
 
-  <div id="gatePassHistory">
-    Loading gate pass history...
-  </div>
-
-</div>
+    </div>
   </section>
 
 </main>
@@ -316,19 +305,9 @@
   GREENPACK INDUSTRIES | Gate Pass System
 </footer>
 
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-
 <script>
 
-// EXISTING HRMS LOGIN SERVICE
-// No changes to HRMS project.
-
-const HRMS_WEB_APP_URL =
-  "https://script.google.com/macros/s/AKfycbxEmbL8co7DTKuRn2il1iQ5-0j9m3JEOq_5zhJx0x4iuQYozeOkHrbdXknvS01VqsM36A/exec";
-
-
-// NEW EMPLOYEE GATE PASS BACKEND
+// EMPLOYEE GATE PASS BACKEND
 
 const GATE_PASS_WEB_APP_URL =
   "https://script.google.com/macros/s/AKfycbxJEemVS2S5ZqZXPKVcHEpXZmYxA5RTCHO7gme-0gH_n1xBZCGbSrxdUgDCLu9fjw9Ruw/exec";
@@ -356,7 +335,8 @@ async function postToBackend(parameters) {
   return await response.json();
 }
 
-// LOAD EMPLOYEE GATE PASS HISTORY AND LATEST QR
+
+// LOAD EMPLOYEE GATE PASS HISTORY AND LATEST STATUS
 
 function escapeHTML(value) {
   return String(value == null ? "" : value).replace(
@@ -377,12 +357,7 @@ function escapeHTML(value) {
 async function loadMyGatePasses() {
 
   const message = document.getElementById("latestPassMessage");
-  const qrBox = document.getElementById("employeeQrCode");
-  const passIdBox = document.getElementById("latestQrPassId");
   const historyBox = document.getElementById("gatePassHistory");
-
-  qrBox.innerHTML = "";
-  passIdBox.textContent = "";
 
   message.textContent = "Loading your gate pass...";
   historyBox.textContent = "Loading history...";
@@ -407,30 +382,13 @@ async function loadMyGatePasses() {
     const passes = result.passes || [];
     const latest = result.latestPass;
 
-    // SHOW QR ONLY FOR THE LATEST HR-APPROVED APPLICATION.
+    // SHOW THE LATEST APPLICATION STATUS ONLY. NO QR OR SECURITY PROCESS.
 
-    if (
-      latest &&
-      latest.status === "Approved" &&
-      result.qrToken
-    ) {
-
-      message.textContent = "Your latest gate pass is approved. Show this QR code to Security.";
-
-      new QRCode(qrBox, {
-        text: result.qrToken,
-        width: 220,
-        height: 220
-      });
-
-      passIdBox.textContent =
-        "Gate Pass ID: " + latest.gatePassId;
-
-    } else if (latest) {
+    if (latest) {
 
       message.textContent =
-        "Latest Gate Pass Status: " + latest.status +
-        ". Your QR code will be available after final HR approval.";
+        "Latest Gate Pass ID: " + latest.gatePassId +
+        " | Status: " + latest.status;
 
     } else {
 
@@ -472,12 +430,6 @@ async function loadMyGatePasses() {
           <p><b>HR Approved By:</b> ${escapeHTML(pass.hrApprovedBy)}</p>
           <p><b>HR Approval Time:</b> ${escapeHTML(pass.hrApprovalTime)}</p>
 
-          <p><b>Security OUT:</b> ${escapeHTML(pass.securityOutTime)}</p>
-          <p><b>OUT Security ID:</b> ${escapeHTML(pass.outSecurityId)}</p>
-
-          <p><b>Security IN:</b> ${escapeHTML(pass.securityInTime)}</p>
-          <p><b>IN Security ID:</b> ${escapeHTML(pass.inSecurityId)}</p>
-
           <p><b>Remarks:</b> ${escapeHTML(pass.remarks)}</p>
 
         </div>
@@ -494,6 +446,8 @@ async function loadMyGatePasses() {
 
   }
 }
+
+
 // EMPLOYEE LOGIN
 
 document.getElementById("loginForm").addEventListener(
@@ -521,7 +475,7 @@ document.getElementById("loginForm").addEventListener(
 
     try {
 
-      // Verify credentials through the separate backend.
+      // Verify credentials through the Gate Pass backend.
       // Password is sent in POST body, not browser URL.
 
       const result = await postToBackend({
@@ -586,6 +540,7 @@ document.getElementById("loginForm").addEventListener(
       document.getElementById("loginBox").style.display = "none";
       document.getElementById("applicationBox").style.display = "block";
       loadMyGatePasses();
+
     } catch (error) {
 
       console.error(error);
@@ -674,7 +629,6 @@ document.getElementById("gatePassForm").addEventListener(
     }
 
     button.disabled = true;
-
     button.textContent = "SUBMITTING...";
 
     message.style.color = "#183b29";
