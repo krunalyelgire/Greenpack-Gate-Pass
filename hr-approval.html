@@ -6,7 +6,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Greenpack HR Gate Pass Approval</title>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
 <style>
 *{box-sizing:border-box}
@@ -32,8 +31,6 @@ button:disabled{opacity:.5;cursor:not-allowed}
 .status{font-weight:bold;color:#a45b00}
 .message{padding:12px;border-radius:7px;margin:12px 0;background:#edf5ef}
 .error{background:#ffeded;color:#a11}
-.qr-area{margin-top:15px;padding:15px;background:#f4f8f5;border-radius:8px;text-align:center}
-.qr-area canvas,.qr-area img{margin:12px auto;display:block}
 .small{font-size:12px;color:#65736a}
 .topbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
 @media(max-width:600px){.container{padding:10px}.panel{padding:15px}}
@@ -254,7 +251,7 @@ const employeeId = p.employeeId || p.empId || "";
       <div style="margin-top:15px">
         <button class="approve" id="approve-${index}"
           onclick="approvePass(${index}, '${escapeHTML(passId)}')">
-          Approve & Generate QR
+          Approve
         </button>
 
         <button class="reject" id="reject-${index}"
@@ -263,7 +260,6 @@ const employeeId = p.employeeId || p.empId || "";
         </button>
       </div>
 
-      <div id="qr-${index}"></div>
     </div>
   `;
 }
