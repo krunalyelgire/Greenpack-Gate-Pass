@@ -265,7 +265,8 @@ const employeeId = p.employeeId || p.empId || "";
 }
 
 async function approvePass(index, passId) {
-  if (!confirm("Approve this gate pass and generate its QR code?")) return;
+
+  if (!confirm("Approve this Gate Pass application?")) return;
 
   const approveButton = document.getElementById("approve-" + index);
   const rejectButton = document.getElementById("reject-" + index);
@@ -275,46 +276,23 @@ async function approvePass(index, passId) {
 
   try {
     const result = await api("approveHRPass", {
-  token: sessionToken,
-  gatePassId: passId
-});
+      token: sessionToken,
+      gatePassId: passId
+    });
+
     if (!result.success) {
       throw new Error(result.message || "Approval failed.");
     }
 
-    if (!result.qrToken) {
-      throw new Error("Approved, but no QR token was returned. Please check the application in the sheet.");
-    }
-
-    const qrContainer = document.getElementById("qr-" + index);
-    qrContainer.innerHTML = `
-      <div class="qr-area">
-        <h3>Gate Pass Approved</h3>
-        <p>Show this QR code to Security at the gate.</p>
-        <div id="qr-code-${index}"></div>
-        <p class="small">QR Token: ${escapeHTML(result.qrToken)}</p>
-        <button class="secondary" onclick="window.print()">Print QR</button>
-      </div>
-    `;
-
-    new QRCode(document.getElementById("qr-code-" + index), {
-      text: result.qrToken,
-      width: 190,
-      height: 190,
-      correctLevel: QRCode.CorrectLevel.H
-    });
-
-    showMessage("mainMessage", "Gate pass approved and QR code generated.");
+    showMessage("mainMessage", "Gate Pass approved successfully.");
+    await loadPending();
 
   } catch (error) {
     approveButton.disabled = false;
     rejectButton.disabled = false;
     showMessage("mainMessage", error.message, true);
   }
-}
-
-async function rejectPass(index, passId) {
-  const reason = prompt("Enter reason for rejecting this gate pass:");
+}  const reason = prompt("Enter reason for rejecting this gate pass:");
 
   if (reason === null) return;
 
